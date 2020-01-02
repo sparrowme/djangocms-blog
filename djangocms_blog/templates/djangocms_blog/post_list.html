@@ -1,5 +1,5 @@
 {% extends "djangocms_blog/base.html" %}
-{% load i18n easy_thumbnails_tags %}{% spaceless %}
+{% load i18n easy_thumbnails_tags blog_tags %}{% spaceless %}
 
 {% block canonical_url %}<link rel="canonical" href="{{ view.get_view_url }}"/>{% endblock canonical_url %}
 
@@ -16,7 +16,9 @@
     </header>
     {% endblock %}
     {% for post in post_list %}
+    {% if request|has_access:post %}
         {% include "djangocms_blog/includes/blog_item.html" with post=post image="true" TRUNCWORDS_COUNT=TRUNCWORDS_COUNT %}
+    {% endif %}
     {% empty %}
     <p class="blog-empty">{% trans "No article found." %}</p>
     {% endfor %}

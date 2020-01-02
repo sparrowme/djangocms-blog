@@ -8,6 +8,7 @@ from aldryn_apphooks_config.managers.parler import AppHookConfigTranslatableMana
 from cms.models import CMSPlugin, PlaceholderField
 from django.conf import settings as dj_settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
 from django.db import models
@@ -86,6 +87,8 @@ class BlogCategory(BlogMetaMixin, TranslatableModel):
     app_config = AppHookConfigField(
         BlogConfig, null=True, verbose_name=_('app. config')
     )
+    #sparrow add group acl
+    groups = models.ManyToManyField(Group, verbose_name=_('access groups'), blank=True)
 
     translations = TranslatedFields(
         name=models.CharField(_('name'), max_length=767),
@@ -199,7 +202,7 @@ class Post(KnockerModel, BlogMetaMixin, TranslatableModel):
     date_featured = models.DateTimeField(_('featured date'), null=True, blank=True)
     publish = models.BooleanField(_('publish'), default=False)
     categories = models.ManyToManyField('djangocms_blog.BlogCategory', verbose_name=_('category'),
-                                        related_name='blog_posts', blank=True)
+                                        related_name='blog_categories', blank=True)
     main_image = FilerImageField(verbose_name=_('main image'), blank=True, null=True,
                                  on_delete=models.SET_NULL,
                                  related_name='djangocms_blog_post_image')
@@ -243,7 +246,6 @@ class Post(KnockerModel, BlogMetaMixin, TranslatableModel):
                             configuration='BLOG_POST_TEXT_CKEDITOR'),
         meta={'unique_together': (('language_code', 'slug'),)}
     )
-    media = PlaceholderField('media', related_name='media')
     content = PlaceholderField('post_content', related_name='post_content')
     liveblog = PlaceholderField('live_blog', related_name='live_blog')
     enable_liveblog = models.BooleanField(verbose_name=_('enable liveblog on post'),
