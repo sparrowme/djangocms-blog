@@ -118,7 +118,8 @@ class BlogCategoryMenu(CMSAttachMenu):
                     )
                     nodes.append(node)
                     added_categories.append(category.pk)
-
+        #for n in nodes:
+        #    print(n.__dict__)
         return nodes
 
 

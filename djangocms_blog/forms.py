@@ -121,6 +121,7 @@ class PostAdminForm(PostAdminFormBase):
         self.base_fields['meta_title'].validators = [
             MaxLengthValidator(get_setting('META_TITLE_LENGTH'))
         ]
+        self.base_fields['notify'].widget = forms.CheckboxInput(original_attrs)
         super(PostAdminForm, self).__init__(*args, **kwargs)
         if 'categories' in self.fields:
             if self.app_config and self.app_config.url_patterns == PERMALINK_TYPE_CATEGORY:
