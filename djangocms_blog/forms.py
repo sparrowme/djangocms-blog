@@ -106,7 +106,8 @@ class PostAdminFormBase(ConfigFormBase, TranslatableModelForm):
 
 
 class PostAdminForm(PostAdminFormBase):
-
+    notify = forms.CheckboxField()
+    
     def __init__(self, *args, **kwargs):
         self.base_fields['meta_description'].validators = [
             MaxLengthValidator(get_setting('META_DESCRIPTION_LENGTH'))
