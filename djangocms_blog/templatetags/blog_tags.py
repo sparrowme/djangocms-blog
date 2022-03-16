@@ -6,6 +6,7 @@ register = template.Library()
 def has_access(request,post):
     try:
         cats=post.categories.all()
+        print(cats)
         if cats==None:
             ccat=0
         else:
@@ -14,19 +15,32 @@ def has_access(request,post):
             return True
         else:
             for cat in cats:
-                intersect=cat.groups.all() & request.user.groups.all()
-                if len(intersect)>0:
+                allcg=cat.groups.all()
+                intersect=allcg & request.user.groups.all()
+                if len(intersect)>0 or len(allcg)==0:
                     return True
         return False
     except Exception as err:
         print('blog_tags exception:',str(err))
         return False
 
+def has_category_access(request,cat):
+    try:
+        allcg=cat.groups.all()
+        intersect=allcg & request.user.groups.all()
+        if len(intersect)>0 or len(allcg)==0:
+            return True
+        return False
+    except Exception as err:
+        print('blog_tags exception:',str(err))
+        return False
+
 #@register.simple_tag
-def trim(textin,cnt,append='...'):
+def trim_content(textin,len,append='...'):
     
-    return textin[:cnt]+append
+    return textin[:len]+append
 
 
-register.filter('trim', trim)
+register.filter('trim_content', trim_content)
 register.filter('has_access', has_access)
+register.filter('has_category_access', has_category_access)

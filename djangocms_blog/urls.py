@@ -9,6 +9,7 @@ from .views import (
     PostDetailView,
     PostListView,
     TaggedListView,
+    PostNotify,
 )
 
 
@@ -23,6 +24,7 @@ def get_urls():
 
 
 detail_urls = get_urls()
+print(detail_urls)
 
 # module-level app_name attribute as per django 1.9+
 app_name = "djangocms_blog"
@@ -36,4 +38,5 @@ urlpatterns = [
     path("category/<str:category>/", CategoryEntriesView.as_view(), name="posts-category"),
     path("tag/<slug:tag>/", TaggedListView.as_view(), name="posts-tagged"),
     path("tag/<slug:tag>/feed/", TagFeed(), name="posts-tagged-feed"),
+    path("notify/", PostNotify.as_view(), name="post-notify"),
 ] + detail_urls

@@ -1,21 +1,80 @@
 import os.path
 
 from aldryn_apphooks_config.mixins import AppConfigMixin
+from cms.plugin_rendering       import ContentRenderer
 from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ImproperlyConfigured
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404
+from django.template            import RequestContext
 from django.urls import reverse
 from django.utils.timezone import now
 from django.utils.translation import get_language
-from django.views.generic import DetailView, ListView
+from django.views.generic import View, DetailView, ListView
 from parler.views import TranslatableSlugMixin, ViewUrlMixin
 
 from .models import BlogCategory, Post
 from .settings import get_setting
+from django.conf import settings
+
+from taggit.models import Tag
+
+
+try:
+    from django_messenger.messenger import DjangoMessenger as DM
+except Exception as err:
+    exc=Exception("DjangoMessenger is not installed.  Try pip install django-messenger. "+str(err))
+    raise exc
 
 User = get_user_model()
+
+class PostNotify(View):
+    def post(self,*args,**kwargs):
+        response={}
+        renderer = ContentRenderer(self.request)
+        spid=self.request.POST.get('postid',0)
+        if spid.isnumeric():
+            pid=int(spid)
+        else:
+            pid=0
+        print('sending',pid)
+        if int(pid)>0:
+            #get list of post viewers
+            msg={'PROTO':settings.PROTO}
+            post=Post.objects.filter(id=pid).first()
+            if post:
+                content=renderer.render_placeholder(post.content, RequestContext(self.request))
+                msg.update({
+                    'request':self.request,
+                    'post':post
+                })
+                print(post.get_absolute_url())
+                maillist=set()
+                cnt=0
+                for cat in post.categories.all():
+                    print(cat)
+                    users=User.objects.filter(groups__in=cat.groups.all()).distinct()
+                    print(users)
+                    maillist.update(set([user.email for user in users]))
+                    print(maillist)
+                    cnt+=len(users)
+                #print(glist)
+                    c=0
+                    for rcpt in maillist:
+                        print(f'[{rcpt}]')
+                        if rcpt!="":
+                            c+=1
+                            msg.update({
+                                'receiver':rcpt,
+                                'proto':settings.PROTO,
+                                'domain':self.request.get_host()                                
+                                })
+                            dm=DM(self.request)
+                            m=DM.Email(request=self.request,template_name='blog-post',ctx=msg,queue=False)
+                            retval=m.send()
+                    response.update({'message':f'{c} of {cnt} messages sent','postid':spid})
+        return JsonResponse(response)
 
 
 class BaseBlogView(AppConfigMixin, ViewUrlMixin):
@@ -58,6 +117,10 @@ class BaseBlogListView(BaseBlogView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["TRUNCWORDS_COUNT"] = get_setting("POSTS_LIST_TRUNCWORDS_COUNT")
+        tags = Tag.objects.all()
+        context["alltags"]=tags
+        cats = BlogCategory.objects.all()
+        context["allcats"]=cats
         return context
 
     def get_paginate_by(self, queryset):
@@ -79,7 +142,9 @@ class PostDetailView(TranslatableSlugMixin, BaseBlogView, DetailView):
             template_path = (self.config and self.config.template_prefix) or "djangocms_blog"
             return os.path.join(template_path, "post_instant_article.html")
         else:
-            return super().get_template_names()
+            t=super().get_template_names()
+            print(t)
+            return t
 
     def get_queryset(self):
         queryset = self.model._default_manager.all()
