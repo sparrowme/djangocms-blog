@@ -31,12 +31,15 @@ from .fields import slugify
 from .managers import GenericDateTaggedManager
 from .settings import get_setting
 
+from taggit.models import Tag
+
 BLOG_CURRENT_POST_IDENTIFIER = get_setting("CURRENT_POST_IDENTIFIER")
 BLOG_CURRENT_NAMESPACE = get_setting("CURRENT_NAMESPACE")
 BLOG_PLUGIN_TEMPLATE_FOLDERS = get_setting("PLUGIN_TEMPLATE_FOLDERS")
 
 
 thumbnail_model = "{}.{}".format(ThumbnailOption._meta.app_label, ThumbnailOption.__name__)
+
 
 
 try:
@@ -319,6 +322,29 @@ class Post(KnockerModel, BlogMetaMixin, TranslatableModel):
     def __str__(self):
         default = gettext("Post (no translation)")
         return self.safe_translation_getter("title", any_language=True, default=default)
+
+
+    def rssfeed(self):  #TODO: add category parm to filter
+        t=Tag.objects.filter(slug="_pinned")
+        posts=Post.objects.all()
+        items=[]
+        if not t:
+            return []
+        for post in posts:
+            #print(t[0],post.tags.filter())
+            try:
+                if t[0] in post.tags.filter():
+                    i={
+                    "title": self.get_title(),
+                    "link": self.get_absolute_url(),
+                    "description": self.get_subtitle(),
+                    "pubdate": self.post_date,
+                    "imgurl": self.get_image_full_url
+                    }            
+                    items.append(i)
+            except:
+                pass #move on???
+        return items
 
     @property
     def guid(self, language=None):
