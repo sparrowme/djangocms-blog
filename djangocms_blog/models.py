@@ -331,23 +331,22 @@ class Post(KnockerModel, BlogMetaMixin, TranslatableModel):
         if not t:
             return []
         for post in posts:
-            print(t[0],list(post.tags.filter()))
+            #print(t[0],list(post.tags.filter()))
             try:
                 if t[0] in list(post.tags.filter()):
-                    print(f'{post} Pinned!! building')
+                    #print(f'{post} Pinned!! building')
                     i={
                     "title": post.get_title(),
-                    "link": "https://www.axisacademy.org?aff=rsspin", #post.get_absolute_url(),
+                    "link": f'{post.get_full_url()}?affid=pin',
+                    #"link": "https://www.axisacademy.org?aff=rsspin", #post.get_absolute_url(),
                     "description": post.get_description(),
                     "pubdate": post.date.strftime('%a, %d %b %Y %H:%M:%S %Z'), #Mon, 02 May 2022 00:01:09 EDT
                     "imgurl": post.get_image_full_url()
                     }            
                     items.append(i)
-                    print(items)
-                else:
-                    print(f'{post} Not pinned')
+                    #print(items)
             except Exception as err:
-                print(str(err))
+                print(f'Failed to build rss for "{post}". {str(err)}')
                 pass #move on???
         return items
 
